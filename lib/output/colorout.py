@@ -110,11 +110,6 @@ class ColorOutput(output.TextOutput):
         # Call parent init
         output.TextOutput.__init__(self, format=fmtstr, **kwargs)
 
-        self.setColorMode()
-
-        # Write Header
-        if self._COLORMODE == 'HTML':
-            self._htmlwrite(self._HTMLHeader(self.title))
 
         # In HTML mode, if we get any single call
         # to write() with the time option set, we will set
@@ -122,6 +117,14 @@ class ColorOutput(output.TextOutput):
         # on initial page load.  Otherwise, timestamps will be hidden
         # until toggled by the user
         self._htmldisplaytimes = False
+
+    def setup(self):
+        # Write Header
+        self.setColorMode()
+
+        if self._COLORMODE == 'HTML':
+            self._htmlwrite(self._HTMLHeader(self.title))
+
 
     def setColorMode(self):
         # Determine output mode
@@ -142,6 +145,8 @@ class ColorOutput(output.TextOutput):
             self.htmlbuffer += text
         else:
             self.fh.write(text)
+            if self.nobuffer:
+                self.fh.flush()
 
     def htmldump(self):
         '''
@@ -241,6 +246,8 @@ class ColorOutput(output.TextOutput):
         elif self._COLORMODE == 'TTY' and self._timemode and timestamp != None:
             self.fh.write('\x1b[36m%s UTC:\x1b[0m\n' %
                           datetime.datetime.utcfromtimestamp(timestamp))
+            if self.nobuffer:
+                self.fh.flush()
 
         # Set Direction
         if direction.lower() == 'cs':
@@ -275,6 +282,8 @@ class ColorOutput(output.TextOutput):
                 self._write_tty(text, colorTag)
             else:
                 self.fh.write(text)
+                if self.nobuffer:
+                    self.fh.flush()
 
         # Plain Text
         else:
@@ -308,6 +317,8 @@ class ColorOutput(output.TextOutput):
             self.fh.write(colorTag + _line[0] + '\x1b[0m')
             if len(_line) > 1:
                 self.fh.write('\n')
+            if self.nobuffer:
+                self.fh.flush()
 
     def _HTMLHeader(self, title="Dshell"):
 

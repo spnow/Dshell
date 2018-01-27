@@ -42,6 +42,9 @@ class Output(object):
         self.timeformat = (kw.get('timeformat', self._DEFAULT_TIMEFORMAT))
         self.delim = (kw.get('delim', self._DEFAULT_DELIM))
 
+        # Run flush() after every relevant write() if this is true
+        self.nobuffer = (kw.get('nobuffer', False))
+
         if 'pcap' in kw:
             self.pcapwriter = PCAPWriter(kw['pcap'])
         else:
@@ -194,6 +197,14 @@ class Output(object):
         if m == 'dump':
             self.dump(*args, **kwargs)
 
+    def setup(self):
+        """
+        Perform any additional setup outside of the standard __init__.
+        Runs after command-line arguments are parsed, but before decoders are run.
+        For example, printing header data to the outfile.
+        """
+        pass
+
 
 class FileOutput(Output):
 
@@ -241,6 +252,8 @@ class FileOutput(Output):
             self.sessionwriter.write(obj, **kw)
         elif self.fh:
             self.fh.write(str(obj))
+            if self.nobuffer:
+                self.fh.flush()
 
     def close(self):
         '''close output if not stdout'''
@@ -269,6 +282,8 @@ class TextOutput(FileOutput):
         rec = self.parse(*args, **kw)
         if rec:
             self.fh.write(self.format % rec)
+            if self.nobuffer:
+                self.fh.flush()
 
 
 class DBOutput(Output):

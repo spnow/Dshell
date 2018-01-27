@@ -309,7 +309,6 @@ def initDecoderOptions(decoder, out, options, decoder_args, decoder_options):
         # global
         # provide global output module under alternate name
         decoder.globalout = out
-        # decoder.out.__init__(fh=out.fh) #re-init the decoder
         try:
             # If the decoder's default output doesn't have a filehandle set,
             # use the user provided one
@@ -324,6 +323,9 @@ def initDecoderOptions(decoder, out, options, decoder_args, decoder_options):
             decoder.out.pcapwriter = out.pcapwriter
     # set the logger
     decoder.out.logger = logging.getLogger(decoder.name)
+
+    # perform any output module setup before processing data
+    decoder.out.setup()
 
     # set output format string, or reset to default
     # do not override --oformat specified string
@@ -480,6 +482,8 @@ def main(*largs, **kwargs):
                      '\tpcap=PCAPFILE to write packets to a PCAP file\n' +
                      '\tsession=SESSION to write session text\n' +
                      '\tdirection=data direction to write (c,s,both,split)')
+    group.add_option('--nobuf', help='turn off output buffering', dest='nobuffer',
+                     action='store_true', default=False)
     group.add_option('-w', '--session', dest='session',
                      help='write session file, same as -o session=')
     group.add_option('-W', '--pcap', dest='pcap', default=None,
@@ -566,6 +570,8 @@ def main(*largs, **kwargs):
         # set output file (and other args if -o filename,key=val...)
         if options.outfile:
             outfile, outkw = util.strtok(options.outfile)
+        if options.nobuffer:
+            outkw.update(nobuffer=True)
         # output extra?
         if options.oextra:
             outkw.update(extra=True)
